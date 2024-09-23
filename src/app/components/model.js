@@ -16,7 +16,7 @@ const Model = (props) => {
     return new THREE.ShaderMaterial({
       uniforms: {
         customTexture: { value: customTexture },
-        holographicColor: { value: new THREE.Color(0x00ffff) },
+        holographicColor: { value: new THREE.Color(0xe5e5e5) },
         time: { value: 0 },
       },
       vertexShader: `
@@ -39,7 +39,7 @@ const Model = (props) => {
           vec4 holographicOverlay = vec4(holographicColor, 0.3); // Holographic transparency set to 0.3
 
           // Blend the custom texture with the holographic overlay
-          gl_FragColor = mix(baseTexture, holographicOverlay, 0.1); // 30% holographic, 70% custom texture
+          gl_FragColor = mix(baseTexture, holographicOverlay, 0.18); // 30% holographic, 70% custom texture
         }
       `,
       transparent: true,
