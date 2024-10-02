@@ -1,10 +1,8 @@
-import { Configuration, OpenAIApi } from "openai";
+import { OpenAIApi } from "openai";
 
-const configuration = new Configuration({
+const openai = new OpenAIApi({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const openai = new OpenAIApi(configuration);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -14,7 +12,6 @@ export default async function handler(req, res) {
   const { prompt } = req.body;
 
   try {
-    // Correct the API call to OpenAI
     const response = await openai.createImage({
       prompt: prompt,
       n: 1, // number of images to generate
@@ -34,3 +31,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+console.log("OpenAI API Key:", process.env.OPENAI_API_KEY);

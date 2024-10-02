@@ -1,12 +1,12 @@
 // pages/index.js
 "use client"; // Ensure this is a client component
 import React from "react";
-import Clothing from "./components/clothing";
+import CDCASE from "./components/cdcase";
 
 export default function Home() {
   return (
     <>
-      <Clothing />
+      <CDCASE />
     </>
   );
 }

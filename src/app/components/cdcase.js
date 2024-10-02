@@ -4,9 +4,9 @@
 import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment } from "@react-three/drei";
-import Model from "./components/model";
+import Model from "./model";
 
-export default function Home() {
+export default function cdcase() {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Canvas camera={{ position: [0, 0, 5] }}>
