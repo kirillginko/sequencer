@@ -1,6 +1,9 @@
+// AudioSequencer.js
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Volume2, VolumeX, RotateCcw, Save, Upload } from "lucide-react";
 import { Howl, Howler } from "howler";
+import DelayEffect from "../DelayEffect";
+import { createDelayEffect } from "../delayEffectUtils";
 import styles from "../../audiosequencer.module.css";
 
 const Dialog = ({ isOpen, onClose, title, children }) => {
@@ -24,7 +27,26 @@ const Dialog = ({ isOpen, onClose, title, children }) => {
 
 const GRID_SIZE = 16;
 const TOTAL_STEPS = GRID_SIZE * GRID_SIZE;
-const ANIMATION_DURATION = 3000; // 3 seconds per loop
+const ANIMATION_DURATION = 3000;
+
+const NOTES = [
+  "C5",
+  "A#4",
+  "G#4",
+  "F#4",
+  "E4",
+  "D4",
+  "C4",
+  "A#3",
+  "G#3",
+  "F#3",
+  "E3",
+  "D3",
+  "C3",
+  "A#2",
+  "G#2",
+  "F#2",
+];
 
 const AudioSequencer = () => {
   const [activeNotes, setActiveNotes] = useState(new Set());
@@ -36,46 +58,84 @@ const AudioSequencer = () => {
   const [savedPattern, setSavedPattern] = useState("");
   const [loadPattern, setLoadPattern] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
+  const [delayTime, setDelayTime] = useState(0.3);
+  const [feedback, setFeedback] = useState(0.4);
+  const [wetLevel, setWetLevel] = useState(0.3);
 
   const notesRef = useRef([]);
   const loadedCountRef = useRef(0);
   const isDraggingRef = useRef(false);
-  const dragStateRef = useRef(null); // Will store whether we're adding or removing notes
+  const dragStateRef = useRef(null);
   const activeNotesRef = useRef(activeNotes);
+  const delayEffectRef = useRef(null);
 
-  // Keep activeNotesRef in sync with activeNotes
   useEffect(() => {
     activeNotesRef.current = activeNotes;
   }, [activeNotes]);
 
-  // Initialize audio
+  // Initialize audio and delay effect
   useEffect(() => {
     loadedCountRef.current = 0;
 
-    for (let i = 0; i < GRID_SIZE; i++) {
-      notesRef.current[i] = new Howl({
-        src: [
-          `https://s3-us-west-2.amazonaws.com/s.cdpn.io/380275/${i}.mp3`,
-          `https://s3-us-west-2.amazonaws.com/s.cdpn.io/380275/${i}.ogg`,
-        ],
-        onload: () => {
-          loadedCountRef.current += 1;
-          if (loadedCountRef.current === GRID_SIZE) {
-            setIsLoaded(true);
+    // Create a dummy sound to initialize Howler's audio context
+    const initSound = new Howl({
+      src: [
+        "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA",
+      ],
+      onload: () => {
+        const audioContext = Howler.ctx;
+
+        if (audioContext) {
+          delayEffectRef.current = createDelayEffect(audioContext);
+
+          // Initialize Howl instances for each note
+          for (let i = 0; i < GRID_SIZE; i++) {
+            notesRef.current[i] = new Howl({
+              src: [
+                `https://s3-us-west-2.amazonaws.com/s.cdpn.io/380275/${i}.mp3`,
+                `https://s3-us-west-2.amazonaws.com/s.cdpn.io/380275/${i}.ogg`,
+              ],
+              onload: () => {
+                loadedCountRef.current += 1;
+                if (loadedCountRef.current === GRID_SIZE) {
+                  setIsLoaded(true);
+                }
+              },
+              onplay: function () {
+                const sound = this._sounds[0];
+                if (sound && sound._node && delayEffectRef.current) {
+                  try {
+                    sound._node.connect(delayEffectRef.current.input);
+                    delayEffectRef.current.output.connect(
+                      audioContext.destination
+                    );
+                  } catch (err) {
+                    console.warn("Error connecting audio nodes:", err);
+                  }
+                }
+              },
+            });
           }
-        },
-      });
-    }
+        }
+      },
+    });
 
     return () => {
-      notesRef.current.forEach((note) => note.unload());
+      notesRef.current.forEach((note) => {
+        if (note) note.unload();
+      });
+      if (delayEffectRef.current && delayEffectRef.current.output) {
+        try {
+          delayEffectRef.current.output.disconnect();
+        } catch (err) {
+          console.warn("Error disconnecting audio nodes:", err);
+        }
+      }
     };
   }, []);
 
-  // Enhanced drag handling
   const handleMouseDown = useCallback((index) => {
     isDraggingRef.current = true;
-    // Set initial drag state based on whether we're activating or deactivating
     dragStateRef.current = !activeNotesRef.current.has(index);
 
     setActiveNotes((prev) => {
@@ -103,7 +163,6 @@ const AudioSequencer = () => {
     }
   }, []);
 
-  // Mouse up handler
   useEffect(() => {
     const handleMouseUp = () => {
       isDraggingRef.current = false;
@@ -124,7 +183,6 @@ const AudioSequencer = () => {
     };
   }, []);
 
-  // Animation and sound playback
   useEffect(() => {
     if (!isPlaying || !isLoaded) return;
 
@@ -132,23 +190,28 @@ const AudioSequencer = () => {
       setCurrentStep((prev) => {
         const newStep = (prev + 1) % GRID_SIZE;
 
-        // Play sounds for active notes in the current column
-        if (!isMuted) {
+        if (!isMuted && notesRef.current) {
           for (let row = 0; row < GRID_SIZE; row++) {
             const noteIndex = row * GRID_SIZE + newStep;
-            if (activeNotesRef.current.has(noteIndex)) {
-              notesRef.current[row].play();
+            if (
+              activeNotesRef.current.has(noteIndex) &&
+              notesRef.current[row]
+            ) {
+              try {
+                notesRef.current[row].play();
 
-              // Trigger ripple animation
-              const cell = document.querySelector(
-                `[data-index="${noteIndex}"]`
-              );
-              const ripple = cell?.querySelector(`.${styles.ripple}`);
-              if (ripple) {
-                ripple.classList.add(styles.animate);
-                setTimeout(() => {
-                  ripple.classList.remove(styles.animate);
-                }, 500);
+                const cell = document.querySelector(
+                  `[data-index="${noteIndex}"]`
+                );
+                const ripple = cell?.querySelector(`.${styles.ripple}`);
+                if (ripple) {
+                  ripple.classList.add(styles.animate);
+                  setTimeout(() => {
+                    ripple.classList.remove(styles.animate);
+                  }, 500);
+                }
+              } catch (err) {
+                console.warn("Error playing note:", err);
               }
             }
           }
@@ -161,25 +224,19 @@ const AudioSequencer = () => {
     return () => clearInterval(interval);
   }, [isPlaying, isLoaded, isMuted]);
 
-  // Handle mute toggle
   const toggleMute = useCallback(() => {
-    if (isMuted) {
-      Howler.volume(1);
-    } else {
-      Howler.volume(0);
+    try {
+      if (isMuted) {
+        Howler.volume(1);
+      } else {
+        Howler.volume(0);
+      }
+      setIsMuted(!isMuted);
+    } catch (err) {
+      console.warn("Error toggling mute:", err);
     }
-    setIsMuted(!isMuted);
   }, [isMuted]);
 
-  // Update dialog volume changes
-  const handleDialogOpen = useCallback(() => {
-    Howler.volume(0.5);
-  }, []);
-
-  const handleDialogClose = useCallback(() => {
-    Howler.volume(isMuted ? 0 : 1);
-  }, [isMuted]);
-  // Export pattern
   const exportPattern = useCallback(() => {
     let noteCode = "";
     let offCount = 0;
@@ -202,10 +259,11 @@ const AudioSequencer = () => {
 
     setSavedPattern(`[${noteCode}]`);
     setShowSaveDialog(true);
-    Howler.volume(0.5);
+    if (Howler.ctx) {
+      Howler.volume(0.5);
+    }
   }, [activeNotes]);
 
-  // Import pattern
   const importPattern = useCallback(() => {
     try {
       let noteCode = loadPattern.replace("[", "").replace("]", "");
@@ -236,62 +294,85 @@ const AudioSequencer = () => {
       setActiveNotes(newActiveNotes);
       setShowLoadDialog(false);
       setLoadPattern("");
-      Howler.volume(1);
+      if (Howler.ctx) {
+        Howler.volume(isMuted ? 0 : 1);
+      }
     } catch (error) {
       alert("Invalid pattern format");
     }
-  }, [loadPattern]);
+  }, [loadPattern, isMuted]);
 
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>STEP</h1>
 
-      {/* Sequencer Grid */}
-      <div
-        className={`${styles.board} ${
-          !isLoaded ? styles.loading : styles.forward
-        }`}
-      >
-        <div className={styles.grid}>
-          {Array.from({ length: TOTAL_STEPS }).map((_, index) => {
-            const isActive = activeNotes.has(index);
-            const isCurrentColumn =
-              Math.floor(index % GRID_SIZE) === currentStep;
+      <DelayEffect
+        delayTime={delayTime}
+        setDelayTime={setDelayTime}
+        feedback={feedback}
+        setFeedback={setFeedback}
+        wetLevel={wetLevel}
+        setWetLevel={setWetLevel}
+        delayEffectRef={delayEffectRef}
+        audioContext={Howler.ctx}
+      />
 
-            return (
-              <button
-                key={index}
-                data-index={index}
-                onMouseDown={() => handleMouseDown(index)}
-                onMouseEnter={() => handleMouseEnter(index)}
-                className={`${styles.holder} ${isActive ? styles.active : ""} ${
-                  isCurrentColumn ? styles.current : ""
-                }`}
-                data-note={Math.floor(index / GRID_SIZE)}
-              >
-                <div
-                  className={`${styles.note} ${
-                    isActive ? styles.noteActive : ""
-                  }`}
+      <div className={styles.sequencerContainer}>
+        <div className={styles.noteLabels}>
+          {NOTES.map((note, index) => (
+            <div key={note} className={styles.noteLabel}>
+              {note}
+            </div>
+          ))}
+        </div>
+
+        <div
+          className={`${styles.board} ${
+            !isLoaded ? styles.loading : styles.forward
+          }`}
+        >
+          <div className={styles.grid}>
+            {Array.from({ length: TOTAL_STEPS }).map((_, index) => {
+              const isActive = activeNotes.has(index);
+              const isCurrentColumn =
+                Math.floor(index % GRID_SIZE) === currentStep;
+
+              return (
+                <button
+                  key={index}
+                  data-index={index}
+                  onMouseDown={() => handleMouseDown(index)}
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  className={`${styles.holder} ${
+                    isActive ? styles.active : ""
+                  } ${isCurrentColumn ? styles.current : ""}`}
+                  data-note={Math.floor(index / GRID_SIZE)}
                 >
-                  <div className={styles.ripple} />
-                </div>
-              </button>
-            );
-          })}
+                  <div
+                    className={`${styles.note} ${
+                      isActive ? styles.noteActive : ""
+                    }`}
+                  >
+                    <div className={styles.ripple} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Beat Markers */}
-      <div className={styles.markers}>
-        {Array.from({ length: GRID_SIZE }).map((_, i) => (
-          <div key={i} className={styles.marker}>
-            {i % 4 === 0 ? "•" : "·"}
-          </div>
-        ))}
+      <div className={styles.markerContainer}>
+        <div className={styles.noteLabelsPlaceholder} />
+        <div className={styles.markers}>
+          {Array.from({ length: GRID_SIZE }).map((_, i) => (
+            <div key={i} className={styles.marker}>
+              {i % 4 === 0 ? "•" : "·"}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Controls */}
       <div className={styles.controls}>
         <button onClick={toggleMute} className={styles.button}>
           {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
@@ -313,12 +394,13 @@ const AudioSequencer = () => {
         </button>
       </div>
 
-      {/* Dialogs */}
       <Dialog
         isOpen={showSaveDialog}
         onClose={() => {
           setShowSaveDialog(false);
-          handleDialogClose();
+          if (Howler.ctx) {
+            Howler.volume(isMuted ? 0 : 1);
+          }
         }}
         title="Save or share your loop"
       >
@@ -334,7 +416,9 @@ const AudioSequencer = () => {
         isOpen={showLoadDialog}
         onClose={() => {
           setShowLoadDialog(false);
-          handleDialogClose();
+          if (Howler.ctx) {
+            Howler.volume(isMuted ? 0 : 1);
+          }
         }}
         title="Load pattern"
       >

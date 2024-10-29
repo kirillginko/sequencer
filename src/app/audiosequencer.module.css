@@ -18,47 +18,76 @@
   margin-bottom: 2rem;
 }
 
+.sequencerContainer {
+  display: flex;
+  align-items: stretch;
+  margin: 0 auto;
+}
+
+.noteLabels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding-right: 16px;
+  width: 60px;
+}
+
+.noteLabel {
+  height: 36px;
+  line-height: 36px;
+  text-align: right;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-family: monospace;
+  margin: 4px 0;
+}
+
 .board {
   position: relative;
   background: transparent;
   width: fit-content;
-  margin: 0 auto;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(16, 1fr);
-  gap: 0.25rem;
+  gap: 4px;
+  width: fit-content;
 }
 
 .holder {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   border: none;
   padding: 0;
   background-color: #f36e6b;
-  border-radius: 2px;
+  border-radius: 4px;
   transition: all 0.1s;
   cursor: pointer;
+  margin: 4px 0;
+}
+
+.holder.active {
+  background-color: white;
 }
 
 .holder.current {
+  animation: line 3s linear infinite;
   background-color: #fcd7d6;
-  animation: pulse 3s infinite;
 }
 
 .note {
   width: 100%;
   height: 100%;
   background-color: transparent;
-  border-radius: 2px;
+  border-radius: 4px;
   position: relative;
-  transition: all 0.1s;
+  transition: background-color 0.1s;
 }
 
 .noteActive {
   background-color: white;
-  box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
 .ripple {
@@ -77,17 +106,28 @@
   opacity: 0;
 }
 
-.markers {
+.markerContainer {
   display: flex;
-  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.noteLabelsPlaceholder {
+  width: 60px;
+  padding-right: 16px;
+}
+
+.markers {
+  flex: 1;
+  display: flex;
+  gap: 4px;
   margin-top: 0.5rem;
 }
 
 .marker {
-  width: 24px;
+  width: 36px;
   text-align: center;
   color: #f36e6b;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
 }
 
 .controls {
@@ -99,10 +139,10 @@
 }
 
 .button {
-  padding: 0.75rem;
+  padding: 1rem;
   background-color: #f36e6b;
   border: none;
-  border-radius: 2px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
   color: #fff;
@@ -114,9 +154,10 @@
 
 .button svg {
   display: block;
+  width: 24px;
+  height: 24px;
 }
 
-/* Dialog styles */
 .overlay {
   position: fixed;
   top: 0;
@@ -210,7 +251,21 @@
   background-color: rgba(255, 255, 255, 0.2);
 }
 
+@keyframes line {
+  0%,
+  100% {
+    background-color: #f36e6b;
+  }
+  50% {
+    background-color: #fcd7d6;
+  }
+}
+
 @keyframes pulse {
+  0%,
+  100% {
+    background-color: #f36e6b;
+  }
   40% {
     background-color: #fcd7d6;
   }
@@ -221,31 +276,72 @@
 }
 
 .forward .holder {
-  animation: line 3s linear infinite;
+  animation: none;
 }
 
-.forward .holder:nth-child(16n + 0) {
-  animation-delay: 0s;
-}
-.forward .holder:nth-child(16n + 1) {
-  animation-delay: 0.1875s;
-}
-.forward .holder:nth-child(16n + 2) {
-  animation-delay: 0.375s;
-}
-/* ... continue for all 16 columns */
-.forward .holder:nth-child(16n + 15) {
-  animation-delay: 2.8125s;
+@media (max-width: 960px) {
+  .holder {
+    width: 28px;
+    height: 28px;
+  }
+
+  .noteLabel {
+    height: 28px;
+    line-height: 28px;
+    font-size: 12px;
+  }
+
+  .marker {
+    width: 28px;
+  }
+
+  .noteLabels {
+    width: 45px;
+  }
+
+  .noteLabelsPlaceholder {
+    width: 45px;
+  }
+
+  .button svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 @media (max-width: 768px) {
   .holder {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .noteLabel {
+    height: 22px;
+    line-height: 22px;
+    font-size: 10px;
   }
 
   .marker {
-    width: 20px;
+    width: 22px;
+  }
+
+  .noteLabels {
+    width: 35px;
+    padding-right: 8px;
+  }
+
+  .noteLabelsPlaceholder {
+    width: 35px;
+    padding-right: 8px;
+  }
+
+  .button {
+    padding: 0.75rem;
+  }
+
+  .button svg {
+    width: 18px;
+    height: 18px;
   }
 }
 
