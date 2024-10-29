@@ -79,6 +79,12 @@ const AudioSequencer = () => {
   const delayEffectRef = useRef(null);
   const reverbEffectRef = useRef(null);
 
+  const [showEffects, setShowEffects] = useState(true); // State to control visibility
+
+  const toggleEffects = () => {
+    setShowEffects((prev) => !prev); // Toggle the visibility
+  };
+
   useEffect(() => {
     activeNotesRef.current = activeNotes;
   }, [activeNotes]);
@@ -345,7 +351,14 @@ const AudioSequencer = () => {
     <div className={styles.container}>
       <h1 className={styles.title}>Sequencer</h1>
 
-      <div className={styles.effectsContainer}>
+      <div
+        className={`${styles.effectsContainer} ${
+          showEffects ? styles.slideIn : styles.slideOut
+        }`}
+      >
+        <button onClick={toggleEffects} className={styles.toggleButton}>
+          {showEffects ? "Hide Effects" : "Show Effects"}
+        </button>
         <div className={styles.delayControls}>
           <DelayEffect
             delayTime={delayTime}
@@ -358,18 +371,16 @@ const AudioSequencer = () => {
             audioContext={Howler.ctx}
           />
         </div>
-        <div className={styles.reverbControls}>
-          <ReverbEffect
-            wetLevel={reverbWetLevel}
-            setWetLevel={setReverbWetLevel}
-            dryLevel={reverbDryLevel}
-            setDryLevel={setReverbDryLevel}
-            outputLevel={reverbOutputLevel}
-            setOutputLevel={setReverbOutputLevel}
-            reverbEffectRef={reverbEffectRef}
-            audioContext={Howler.ctx}
-          />
-        </div>
+        <ReverbEffect
+          wetLevel={reverbWetLevel}
+          setWetLevel={setReverbWetLevel}
+          dryLevel={reverbDryLevel}
+          setDryLevel={setReverbDryLevel}
+          outputLevel={reverbOutputLevel}
+          setOutputLevel={setReverbOutputLevel}
+          reverbEffectRef={reverbEffectRef}
+          audioContext={Howler.ctx}
+        />
       </div>
 
       <div className={styles.sequencerContainer}>
