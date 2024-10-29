@@ -1,11 +1,13 @@
-// AudioSequencer.js
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Volume2, VolumeX, RotateCcw, Save, Upload } from "lucide-react";
 import { Howl, Howler } from "howler";
 import DelayEffect from "../DelayEffect";
+import ReverbEffect from "../ReverbEffect";
 import { createDelayEffect } from "../delayEffectUtils";
+import { createReverbEffect } from "../reverbEffectUtils";
 import styles from "../../audiosequencer.module.css";
 
+// Dialog component remains the same
 const Dialog = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
@@ -58,9 +60,16 @@ const AudioSequencer = () => {
   const [savedPattern, setSavedPattern] = useState("");
   const [loadPattern, setLoadPattern] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Delay effect states
   const [delayTime, setDelayTime] = useState(0.3);
   const [feedback, setFeedback] = useState(0.4);
   const [wetLevel, setWetLevel] = useState(0.3);
+
+  // Reverb effect states
+  const [reverbWetLevel, setReverbWetLevel] = useState(0.6); // Increased from 0.3
+  const [reverbDryLevel, setReverbDryLevel] = useState(0.6); // Balanced with wet
+  const [reverbOutputLevel, setReverbOutputLevel] = useState(0.8); // Slight reduction to prevent clipping
 
   const notesRef = useRef([]);
   const loadedCountRef = useRef(0);
@@ -68,27 +77,41 @@ const AudioSequencer = () => {
   const dragStateRef = useRef(null);
   const activeNotesRef = useRef(activeNotes);
   const delayEffectRef = useRef(null);
+  const reverbEffectRef = useRef(null);
 
   useEffect(() => {
     activeNotesRef.current = activeNotes;
   }, [activeNotes]);
 
-  // Initialize audio and delay effect
+  // Initialize audio and effects
   useEffect(() => {
     loadedCountRef.current = 0;
 
-    // Create a dummy sound to initialize Howler's audio context
     const initSound = new Howl({
       src: [
         "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA",
       ],
-      onload: () => {
+      onload: async () => {
         const audioContext = Howler.ctx;
 
         if (audioContext) {
+          // Initialize effects separately
           delayEffectRef.current = createDelayEffect(audioContext);
 
-          // Initialize Howl instances for each note
+          try {
+            reverbEffectRef.current = await createReverbEffect(audioContext);
+
+            // Set up parallel audio routing
+            if (delayEffectRef.current && reverbEffectRef.current) {
+              // Connect both effects directly to the destination
+              delayEffectRef.current.output.connect(audioContext.destination);
+              reverbEffectRef.current.output.connect(audioContext.destination);
+            }
+          } catch (err) {
+            console.warn("Error initializing effects:", err);
+          }
+
+          // Initialize notes with parallel routing
           for (let i = 0; i < GRID_SIZE; i++) {
             notesRef.current[i] = new Howl({
               src: [
@@ -103,12 +126,16 @@ const AudioSequencer = () => {
               },
               onplay: function () {
                 const sound = this._sounds[0];
-                if (sound && sound._node && delayEffectRef.current) {
+                if (sound && sound._node) {
                   try {
-                    sound._node.connect(delayEffectRef.current.input);
-                    delayEffectRef.current.output.connect(
-                      audioContext.destination
-                    );
+                    // Connect to both effects in parallel
+                    sound._node.disconnect();
+                    if (delayEffectRef.current) {
+                      sound._node.connect(delayEffectRef.current.input);
+                    }
+                    if (reverbEffectRef.current) {
+                      sound._node.connect(reverbEffectRef.current.input);
+                    }
                   } catch (err) {
                     console.warn("Error connecting audio nodes:", err);
                   }
@@ -121,14 +148,26 @@ const AudioSequencer = () => {
     });
 
     return () => {
+      // Cleanup
       notesRef.current.forEach((note) => {
         if (note) note.unload();
       });
-      if (delayEffectRef.current && delayEffectRef.current.output) {
+
+      // Cleanup delay effect
+      if (delayEffectRef.current) {
         try {
-          delayEffectRef.current.output.disconnect();
+          delayEffectRef.current.disconnect();
         } catch (err) {
-          console.warn("Error disconnecting audio nodes:", err);
+          console.warn("Error disconnecting delay nodes:", err);
+        }
+      }
+
+      // Cleanup reverb effect
+      if (reverbEffectRef.current) {
+        try {
+          reverbEffectRef.current.disconnect();
+        } catch (err) {
+          console.warn("Error disconnecting reverb nodes:", err);
         }
       }
     };
@@ -306,16 +345,32 @@ const AudioSequencer = () => {
     <div className={styles.container}>
       <h1 className={styles.title}>Sequencer</h1>
 
-      <DelayEffect
-        delayTime={delayTime}
-        setDelayTime={setDelayTime}
-        feedback={feedback}
-        setFeedback={setFeedback}
-        wetLevel={wetLevel}
-        setWetLevel={setWetLevel}
-        delayEffectRef={delayEffectRef}
-        audioContext={Howler.ctx}
-      />
+      <div className={styles.effectsContainer}>
+        <div className={styles.delayControls}>
+          <DelayEffect
+            delayTime={delayTime}
+            setDelayTime={setDelayTime}
+            feedback={feedback}
+            setFeedback={setFeedback}
+            wetLevel={wetLevel}
+            setWetLevel={setWetLevel}
+            delayEffectRef={delayEffectRef}
+            audioContext={Howler.ctx}
+          />
+        </div>
+        <div className={styles.reverbControls}>
+          <ReverbEffect
+            wetLevel={reverbWetLevel}
+            setWetLevel={setReverbWetLevel}
+            dryLevel={reverbDryLevel}
+            setDryLevel={setReverbDryLevel}
+            outputLevel={reverbOutputLevel}
+            setOutputLevel={setReverbOutputLevel}
+            reverbEffectRef={reverbEffectRef}
+            audioContext={Howler.ctx}
+          />
+        </div>
+      </div>
 
       <div className={styles.sequencerContainer}>
         <div className={styles.noteLabels}>

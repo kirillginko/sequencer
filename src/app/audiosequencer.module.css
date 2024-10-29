@@ -22,46 +22,47 @@
   align-items: stretch;
   margin: 0 auto;
   width: 100%;
-  max-width: min(100vw - 2rem, 800px);
-  height: 100vh;
+  max-width: min(100vw - 2rem, 700px);
 }
 
 .noteLabels {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
+  display: grid;
+  grid-template-rows: repeat(16, 1fr); /* Match the 16 rows of the sequence */
   padding-right: 12px;
   width: 45px;
+  gap: 4px; /* Match the gap of the sequence grid */
+  height: auto;
 }
 
 .noteLabel {
-  height: 36px;
-  line-height: 36px;
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
   font-family: monospace;
-  margin: 4px 0;
+  height: 100%;
 }
 
 .board {
   flex: 1;
   position: relative;
   background: transparent;
-  overflow: auto;
+  overflow: visible;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(16, minmax(20px, 1fr));
+  grid-template-columns: repeat(16, 1fr);
+  grid-template-rows: repeat(16, 1fr); /* Explicitly set 16 rows */
   gap: 4px;
   width: 100%;
+  aspect-ratio: 1;
 }
 
 .holder {
   aspect-ratio: 1;
   width: 100%;
-  min-width: 20px;
   border: none;
   padding: 0;
   background-color: #f36e6b;
@@ -69,7 +70,6 @@
   transition: all 0.1s;
   cursor: pointer;
 }
-
 .holder.active {
   background-color: white;
 }
@@ -154,7 +154,7 @@
 }
 
 .ripple.animate {
-  transform: scale(8);
+  transform: scale(5);
   opacity: 0;
 }
 
@@ -248,19 +248,47 @@
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Delay effect styles */
-.delayControls {
+/* Effects styles */
+.effectsContainer {
   position: fixed;
-  bottom: 20px;
+  bottom: 100px;
   right: 20px;
   display: flex;
-  gap: 2rem;
-  padding: 1.5rem;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
+  flex-direction: row;
+  gap: 1rem;
   z-index: 100;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.effectSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  min-width: 80px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.effectTitle {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.delayControls,
+.reverbControls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
 }
 
 .dialContainer {
@@ -268,28 +296,35 @@
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
 }
 
 .dial {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   background: #2c2c2c;
   border-radius: 50%;
   position: relative;
   cursor: ns-resize;
   border: 2px solid #3a3a3a;
   transform: rotate(var(--rotation));
-  transition: box-shadow 0.1s ease;
+  transition: all 0.2s ease;
 }
 
 .dial:hover {
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  border-color: #4a4a4a;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.dial:active {
+  border-color: #5a5a5a;
+  background: #3c3c3c;
 }
 
 .dialMarker {
   position: absolute;
   width: 2px;
-  height: 20px;
+  height: 16px;
   background: white;
   left: 50%;
   transform: translateX(-50%);
@@ -298,14 +333,17 @@
 
 .dialLabel {
   color: rgba(255, 255, 255, 0.8);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .dialValue {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.75rem;
   font-family: monospace;
+  margin-top: 0.25rem;
 }
 
 /* Animations */
@@ -333,8 +371,30 @@
     height: 28px;
   }
 }
+@media (max-height: 800px) {
+  .sequencerContainer {
+    padding-bottom: 140px;
+  }
+
+  .noteLabel {
+    font-size: 12px;
+  }
+}
 
 @media (max-width: 768px) {
+  .sequencerContainer {
+    padding-bottom: 160px;
+  }
+
+  .noteLabels {
+    width: 35px;
+    padding-right: 8px;
+  }
+
+  .noteLabel {
+    font-size: 12px;
+  }
+
   .holder {
     width: 24px;
     height: 24px;
@@ -354,9 +414,15 @@
     font-size: 12px;
   }
 
-  .delayControls {
+  .effectsContainer {
+    bottom: 10px;
+    right: 10px;
     padding: 0.75rem;
-    gap: 1rem;
+    gap: 0.75rem;
+  }
+
+  .effectSection {
+    padding: 0.5rem 0.75rem;
   }
 
   .dial {
@@ -364,12 +430,33 @@
     height: 40px;
   }
 
+  .dialMarker {
+    height: 14px;
+  }
+
   .dialLabel {
     font-size: 0.7rem;
+  }
+
+  .effectTitle {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
   }
 }
 
 @media (max-width: 480px) {
+  .sequencerContainer {
+    padding-bottom: 140px;
+  }
+
+  .noteLabels {
+    width: 30px;
+    padding-right: 6px;
+  }
+
+  .noteLabel {
+    font-size: 10px;
+  }
   .holder {
     width: 20px;
     height: 20px;
@@ -395,8 +482,41 @@
 }
 
 @media (max-height: 600px) {
+  .sequencerContainer {
+    padding-bottom: 120px;
+  }
+
+  .noteLabel {
+    font-size: 10px;
+  }
   .title {
     font-size: 1.5rem;
     margin-bottom: 0.75rem;
+  }
+
+  .effectsContainer {
+    padding: 0.5rem;
+  }
+
+  .effectSection {
+    padding: 0.5rem;
+  }
+
+  .dial {
+    width: 35px;
+    height: 35px;
+  }
+
+  .dialMarker {
+    height: 12px;
+  }
+
+  .dialLabel {
+    font-size: 0.65rem;
+  }
+
+  .effectTitle {
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 }
