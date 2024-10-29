@@ -164,13 +164,21 @@ const AudioSequencer = () => {
   // Handle mute toggle
   const toggleMute = useCallback(() => {
     if (isMuted) {
-      Howler.unmute();
+      Howler.volume(1);
     } else {
-      Howler.mute();
+      Howler.volume(0);
     }
     setIsMuted(!isMuted);
   }, [isMuted]);
 
+  // Update dialog volume changes
+  const handleDialogOpen = useCallback(() => {
+    Howler.volume(0.5);
+  }, []);
+
+  const handleDialogClose = useCallback(() => {
+    Howler.volume(isMuted ? 0 : 1);
+  }, [isMuted]);
   // Export pattern
   const exportPattern = useCallback(() => {
     let noteCode = "";
@@ -310,7 +318,7 @@ const AudioSequencer = () => {
         isOpen={showSaveDialog}
         onClose={() => {
           setShowSaveDialog(false);
-          Howler.volume(1);
+          handleDialogClose();
         }}
         title="Save or share your loop"
       >
@@ -326,7 +334,7 @@ const AudioSequencer = () => {
         isOpen={showLoadDialog}
         onClose={() => {
           setShowLoadDialog(false);
-          Howler.volume(1);
+          handleDialogClose();
         }}
         title="Load pattern"
       >
