@@ -1,0 +1,154 @@
+/* DelayEffect.module.css */
+.valhallaDelay {
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  padding: 20px;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.section {
+  background-color: #2c82c9;
+  border-radius: 8px;
+  padding: 15px;
+  min-width: 120px;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.control h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.knob {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  background-color: #1a1a1a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.knobInput {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  transform: rotate(-135deg);
+}
+
+.knob::before {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 20px;
+  background-color: white;
+  top: 10px;
+  transform-origin: bottom center;
+  transform: rotate(calc(270deg * var(--rotation, 0)));
+}
+
+.value {
+  font-size: 12px;
+  color: #a7d4f9;
+  text-align: center;
+}
+
+.subControl {
+  width: 100%;
+  text-align: center;
+}
+
+.subControl h4 {
+  margin: 5px 0;
+  font-size: 12px;
+  color: white;
+}
+
+.slider {
+  width: 100%;
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  appearance: none;
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.taps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  width: 100%;
+}
+
+.tapButton {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #a7d4f9;
+  padding: 4px;
+  font-size: 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.tapButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.footer {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  color: #2c82c9;
+  font-size: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.select {
+  background-color: #1a1a1a;
+  color: #a7d4f9;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  width: 100%;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .valhallaDelay {
+    flex-direction: column;
+  }
+
+  .section {
+    width: 100%;
+  }
+}

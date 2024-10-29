@@ -304,7 +304,7 @@ const AudioSequencer = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>STEP</h1>
+      <h1 className={styles.title}>Sequencer</h1>
 
       <DelayEffect
         delayTime={delayTime}
