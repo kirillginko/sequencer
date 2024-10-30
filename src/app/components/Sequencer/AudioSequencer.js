@@ -432,7 +432,12 @@ const AudioSequencer = () => {
         <div className={styles.noteLabelsPlaceholder} />
         <div className={styles.markers}>
           {Array.from({ length: GRID_SIZE }).map((_, i) => (
-            <div key={i} className={styles.marker}>
+            <div
+              key={i}
+              className={`${styles.marker} ${
+                currentStep === i ? styles.markerActive : ""
+              }`}
+            >
               {i % 4 === 0 ? "•" : "·"}
             </div>
           ))}
