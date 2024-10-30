@@ -5,6 +5,8 @@ import DelayEffect from "../DelayEffect";
 import ReverbEffect from "../ReverbEffect";
 import { createDelayEffect } from "../delayEffectUtils";
 import { createReverbEffect } from "../reverbEffectUtils";
+import SaturationEffect from "../SaturationEffect";
+import { createSaturationEffect } from "../saturationEffectUtils";
 import styles from "../../audiosequencer.module.css";
 
 // Dialog component remains the same
@@ -61,6 +63,12 @@ const AudioSequencer = () => {
   const [loadPattern, setLoadPattern] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Saturation effect states
+  const [saturationDrive, setSaturationDrive] = useState(50);
+  const [saturationWetLevel, setSaturationWetLevel] = useState(0.5);
+  const [saturationOutputLevel, setSaturationOutputLevel] = useState(0.8);
+  const saturationRef = useRef(null);
+
   // Delay effect states
   const [delayTime, setDelayTime] = useState(0.3);
   const [feedback, setFeedback] = useState(0.4);
@@ -85,6 +93,7 @@ const AudioSequencer = () => {
     setShowEffects((prev) => !prev); // Toggle the visibility
   };
 
+  // Initialize audio and effects
   useEffect(() => {
     activeNotesRef.current = activeNotes;
   }, [activeNotes]);
@@ -103,15 +112,20 @@ const AudioSequencer = () => {
         if (audioContext) {
           // Initialize effects separately
           delayEffectRef.current = createDelayEffect(audioContext);
+          saturationRef.current = createSaturationEffect(audioContext);
 
           try {
             reverbEffectRef.current = await createReverbEffect(audioContext);
 
-            // Set up parallel audio routing
-            if (delayEffectRef.current && reverbEffectRef.current) {
-              // Connect both effects directly to the destination
+            // Connect all effects to destination
+            if (
+              delayEffectRef.current &&
+              reverbEffectRef.current &&
+              saturationRef.current
+            ) {
               delayEffectRef.current.output.connect(audioContext.destination);
               reverbEffectRef.current.output.connect(audioContext.destination);
+              saturationRef.current.output.connect(audioContext.destination);
             }
           } catch (err) {
             console.warn("Error initializing effects:", err);
@@ -134,13 +148,15 @@ const AudioSequencer = () => {
                 const sound = this._sounds[0];
                 if (sound && sound._node) {
                   try {
-                    // Connect to both effects in parallel
                     sound._node.disconnect();
                     if (delayEffectRef.current) {
                       sound._node.connect(delayEffectRef.current.input);
                     }
                     if (reverbEffectRef.current) {
                       sound._node.connect(reverbEffectRef.current.input);
+                    }
+                    if (saturationRef.current) {
+                      sound._node.connect(saturationRef.current.input);
                     }
                   } catch (err) {
                     console.warn("Error connecting audio nodes:", err);
@@ -159,23 +175,16 @@ const AudioSequencer = () => {
         if (note) note.unload();
       });
 
-      // Cleanup delay effect
-      if (delayEffectRef.current) {
-        try {
-          delayEffectRef.current.disconnect();
-        } catch (err) {
-          console.warn("Error disconnecting delay nodes:", err);
+      // Cleanup all effects
+      [delayEffectRef, reverbEffectRef, saturationRef].forEach((effectRef) => {
+        if (effectRef.current) {
+          try {
+            effectRef.current.disconnect();
+          } catch (err) {
+            console.warn("Error disconnecting effect nodes:", err);
+          }
         }
-      }
-
-      // Cleanup reverb effect
-      if (reverbEffectRef.current) {
-        try {
-          reverbEffectRef.current.disconnect();
-        } catch (err) {
-          console.warn("Error disconnecting reverb nodes:", err);
-        }
-      }
+      });
     };
   }, []);
 
@@ -359,6 +368,18 @@ const AudioSequencer = () => {
         <button onClick={toggleEffects} className={styles.toggleButton}>
           {showEffects ? "Hide Effects" : "Show Effects"}
         </button>
+        <div>
+          <SaturationEffect
+            drive={saturationDrive}
+            setDrive={setSaturationDrive}
+            wetLevel={saturationWetLevel}
+            setWetLevel={setSaturationWetLevel}
+            outputLevel={saturationOutputLevel}
+            setOutputLevel={setSaturationOutputLevel}
+            saturationRef={saturationRef}
+            audioContext={Howler.ctx}
+          />
+        </div>
         <div className={styles.delayControls}>
           <DelayEffect
             delayTime={delayTime}

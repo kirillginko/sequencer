@@ -54,7 +54,7 @@ export const createReverbEffect = async (audioContext) => {
     // Initial values - more pronounced wet signal
     wetGain.gain.value = 0.6; // Increased from 0.3
     dryGain.gain.value = 0.6; // Allows both dry and wet to be heard clearly
-    outputGain.gain.value = 0.8;
+    outputGain.gain.value = 1;
 
     // Routing
     // Dry chain
