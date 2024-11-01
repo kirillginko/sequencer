@@ -64,8 +64,8 @@ const AudioSequencer = () => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Saturation effect states
-  const [saturationDrive, setSaturationDrive] = useState(50);
-  const [saturationWetLevel, setSaturationWetLevel] = useState(0.5);
+  const [saturationDrive, setSaturationDrive] = useState(12);
+  const [saturationWetLevel, setSaturationWetLevel] = useState(0.2);
   const [saturationOutputLevel, setSaturationOutputLevel] = useState(0.8);
   const saturationRef = useRef(null);
 
@@ -359,7 +359,6 @@ const AudioSequencer = () => {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Sequencer</h1>
-
       <div
         className={`${styles.effectsContainer} ${
           showEffects ? styles.slideIn : styles.slideOut
