@@ -64,7 +64,7 @@ const AudioSequencer = () => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Saturation effect states
-  const [saturationDrive, setSaturationDrive] = useState(12);
+  const [saturationDrive, setSaturationDrive] = useState(0.9);
   const [saturationWetLevel, setSaturationWetLevel] = useState(0.2);
   const [saturationOutputLevel, setSaturationOutputLevel] = useState(0.8);
   const saturationRef = useRef(null);
